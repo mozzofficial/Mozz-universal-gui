@@ -1,4 +1,4 @@
---[[ MOZZ UNIVERSAL MOBILE SCRIPT]]
+--[[ MOZZ UNIVERSAL — Move, Players, ESP, Aimbot ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -57,8 +57,8 @@ Instance.new("UICorner", AimBtn).CornerRadius = UDim.new(0, 12)
 
 -- Основное меню
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 220, 0, 320)
-Main.Position = UDim2.new(0.5, -110, 0.5, -160)
+Main.Size = UDim2.new(0, 260, 0, 320)
+Main.Position = UDim2.new(0.5, -130, 0.5, -160)
 Main.BackgroundColor3 = Colors.Bg
 Main.BorderSizePixel = 0
 Main.Visible = false
@@ -163,9 +163,9 @@ TabsFrame.Parent = Main
 Instance.new("UICorner", TabsFrame).CornerRadius = UDim.new(0, 6)
 
 local Pages = {}
-local function MakeTab(name, xScale)
+local function MakeTab(name, xScale, width)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.33, 0, 1, 0)
+    btn.Size = UDim2.new(width, 0, 1, 0)
     btn.Position = UDim2.new(xScale, 0, 0, 0)
     btn.BackgroundTransparency = 1
     btn.TextColor3 = Colors.SubText
@@ -194,9 +194,10 @@ local function MakeTab(name, xScale)
     return page
 end
 
-local pageMove = MakeTab("Move", 0)
-local pageESP = MakeTab("ESP", 0.33)
-local pageAim = MakeTab("Aim", 0.66)
+local pageMove = MakeTab("Move", 0, 0.25)
+local pagePlayers = MakeTab("Players", 0.25, 0.25)
+local pageESP = MakeTab("ESP", 0.5, 0.25)
+local pageAim = MakeTab("Aim", 0.75, 0.25)
 
 local function CreateToggle(parent, text, key, callback)
     local btn = Instance.new("TextButton")
@@ -301,8 +302,111 @@ CreateToggle(pageAim, "Visible Check", "Aim_Visible")
 CreateInput(pageAim, "FOV Radius", "Aim_FOV")
 CreateInput(pageAim, "Smoothness", "Aim_Smooth")
 
-Pages["Move"].page.Visible = true
-Pages["Move"].btn.TextColor3 = Colors.Accent
+-- ================= Players Tab =================
+local SpectateTarget = nil
+local function UpdatePlayerList()
+    for _, v in ipairs(pagePlayers:GetChildren()) do
+        if v:IsA("Frame") or v:IsA("TextButton") then v:Destroy() end
+    end
+
+    local playerList = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            table.insert(playerList, plr)
+        end
+    end
+
+    table.sort(playerList, function(a, b)
+        return string.lower(a.Name) < string.lower(b.Name)
+    end)
+
+    for i, plr in ipairs(playerList) do
+        local row = Instance.new("Frame")
+        row.Size = UDim2.new(1, -10, 0, 32)
+        row.Position = UDim2.new(0, 5, 0, (i - 1) * 35)
+        row.BackgroundColor3 = Colors.Panel
+        row.BorderSizePixel = 0
+        row.Parent = pagePlayers
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
+
+        local nameLbl = Instance.new("TextLabel")
+        nameLbl.Size = UDim2.new(0.4, 0, 1, 0)
+        nameLbl.Position = UDim2.new(0, 10, 0, 0)
+        nameLbl.BackgroundTransparency = 1
+        nameLbl.Text = plr.Name
+        nameLbl.TextColor3 = Colors.Text
+        nameLbl.Font = Enum.Font.Gotham
+        nameLbl.TextSize = 13
+        nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+        nameLbl.TextTruncate = Enum.TextTruncate.AtEnd
+        nameLbl.Parent = row
+
+        local tpBtn = Instance.new("TextButton")
+        tpBtn.Size = UDim2.new(0, 45, 0, 24)
+        tpBtn.Position = UDim2.new(1, -110, 0.5, -12)
+        tpBtn.BackgroundColor3 = Colors.Accent
+        tpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        tpBtn.Font = Enum.Font.GothamBold
+        tpBtn.TextSize = 11
+        tpBtn.Text = "TP"
+        tpBtn.BorderSizePixel = 0
+        tpBtn.Parent = row
+        Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 4)
+        
+        tpBtn.MouseButton1Click:Connect(function()
+            if plr.Character and LocalPlayer.Character then
+                local tRoot = plr.Character:FindFirstChild("HumanoidRootPart")
+                local myRoot = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if tRoot and myRoot then
+                    -- 1 студ дистанции (впритык)
+                    myRoot.CFrame = tRoot.CFrame * CFrame.new(0, 0, 1)
+                end
+            end
+        end)
+
+        local spBtn = Instance.new("TextButton")
+        spBtn.Size = UDim2.new(0, 55, 0, 24)
+        spBtn.Position = UDim2.new(1, -60, 0.5, -12)
+        spBtn.BackgroundColor3 = SpectateTarget == plr and Colors.ToggleOn or Colors.Bg
+        spBtn.TextColor3 = Colors.Text
+        spBtn.Font = Enum.Font.GothamBold
+        spBtn.TextSize = 11
+        spBtn.Text = "Watch"
+        spBtn.BorderSizePixel = 0
+        spBtn.Parent = row
+        Instance.new("UICorner", spBtn).CornerRadius = UDim.new(0, 4)
+        
+        spBtn.MouseButton1Click:Connect(function()
+            if SpectateTarget == plr then
+                SpectateTarget = nil
+                Camera.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                spBtn.BackgroundColor3 = Colors.Bg
+            else
+                SpectateTarget = plr
+                if plr.Character then
+                    local tHum = plr.Character:FindFirstChildOfClass("Humanoid")
+                    if tHum then Camera.CameraSubject = tHum end
+                end
+                UpdatePlayerList()
+            end
+        end)
+    end
+end
+
+UpdatePlayerList()
+Players.PlayerAdded:Connect(function() task.wait(0.5) UpdatePlayerList() end)
+Players.PlayerRemoving:Connect(function() task.wait(0.1) UpdatePlayerList() end)
+
+-- Возврат камеры при смерти/выходе цели
+RunService.RenderStepped:Connect(function()
+    if SpectateTarget then
+        if not SpectateTarget.Character or not SpectateTarget.Character:FindFirstChildOfClass("Humanoid") then
+            SpectateTarget = nil
+            Camera.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            UpdatePlayerList()
+        end
+    end
+end)
 
 -- ================= Логика =================
 RunService.Stepped:Connect(function()
@@ -400,14 +504,12 @@ RunService.RenderStepped:Connect(function(dt)
         hue = (hue + dt * 0.5) % 1
         local color = Cfg.ESP_Rainbow and Color3.fromHSV(hue, 1, 1) or Cfg.ESP_Color
         
-        -- Проходимся по всем игрокам каждый кадр
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr ~= LocalPlayer and plr.Character then
                 local head = plr.Character:FindFirstChild("Head")
                 local hum = plr.Character:FindFirstChildOfClass("Humanoid")
                 
                 if head and hum then
-                    -- Если ESP нет в кэше, создаем его
                     if not ESPCache[plr] or not ESPCache[plr].Billboard.Parent then
                         local bill = Instance.new("BillboardGui")
                         bill.Name = "MozzBill"
@@ -439,7 +541,6 @@ RunService.RenderStepped:Connect(function(dt)
                         ESPCache[plr] = {Billboard = bill, Chams = nil}
                     end
                     
-                    -- Обновляем данные ESP
                     local data = ESPCache[plr]
                     local bill = data.Billboard
                     
@@ -454,7 +555,6 @@ RunService.RenderStepped:Connect(function(dt)
                     bill.I.Text = txt
                     bill.I.TextColor3 = color
                     
-                    -- Логика Chams
                     if Cfg.Chams then
                         if not data.Chams or not data.Chams.Parent or data.Chams.Adornee ~= plr.Character then
                             if data.Chams then data.Chams:Destroy() end
