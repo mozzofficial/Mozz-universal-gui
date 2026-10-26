@@ -1,4 +1,4 @@
---[[ MOZZ v45 — Delta Android (Fixed TP Tool) ]]
+--[[ MOZZ v45 — Delta Android (Final) ]]
 
 if not getgenv then return warn("Delta executor required") end
 if getgenv().MozzLoaded then pcall(function() getgenv().MozzGUI:Destroy() end) end
@@ -39,7 +39,7 @@ local Themes = {
 getgenv().MozzRoles = {}
 local function tag(obj, role) getgenv().MozzRoles[obj] = role return obj end
 
--- ==== FORWARD DECLARATIONS (Чтобы избежать ошибок вызова nil) ====
+-- ==== FORWARD DECLARATIONS ====
 function teleportTo(plr)
     if not plr or not plr.Character then return end
     local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
