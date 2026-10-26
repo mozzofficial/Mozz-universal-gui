@@ -184,6 +184,10 @@ local function MakeTab(name, xScale, width)
     page.Visible = false
     page.Parent = Main
     
+    -- Фикс невидимых элементов в скролле
+    page.AutomaticCanvasSize = Enum.AutomaticSize.Y 
+    page.CanvasSize = UDim2.new(0, 0, 0, 0)
+
     Pages[name] = {btn=btn, page=page}
     btn.MouseButton1Click:Connect(function()
         for k, v in pairs(Pages) do
@@ -306,7 +310,7 @@ CreateInput(pageAim, "Smoothness", "Aim_Smooth")
 local SpectateTarget = nil
 local function UpdatePlayerList()
     for _, v in ipairs(pagePlayers:GetChildren()) do
-        if v:IsA("Frame") or v:IsA("TextButton") then v:Destroy() end
+        if v:IsA("Frame") then v:Destroy() end
     end
 
     local playerList = {}
@@ -358,7 +362,6 @@ local function UpdatePlayerList()
                 local tRoot = plr.Character:FindFirstChild("HumanoidRootPart")
                 local myRoot = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                 if tRoot and myRoot then
-                    -- 1 студ дистанции (впритык)
                     myRoot.CFrame = tRoot.CFrame * CFrame.new(0, 0, 1)
                 end
             end
@@ -391,6 +394,13 @@ local function UpdatePlayerList()
             end
         end)
     end
+
+    -- Отступ снизу (25 пикселей), чтобы последний элемент не прилипал
+    local spacer = Instance.new("Frame")
+    spacer.Size = UDim2.new(1, 0, 0, 25)
+    spacer.BackgroundTransparency = 1
+    spacer.Position = UDim2.new(0, 0, 0, #playerList * 35)
+    spacer.Parent = pagePlayers
 end
 
 UpdatePlayerList()
