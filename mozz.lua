@@ -1,4 +1,4 @@
---[[ MOZZ MODERN — Move, Players, ESP, Aimbot (Team Check) ]]
+--[[ MOZZ UNIVERSAL ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
