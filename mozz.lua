@@ -1,4 +1,4 @@
---[[ MOZZ v45 — Delta Android (Final) ]]
+--[[ MOZZ v39.2 — Delta Android (Chams Fix + Rainbow ESP + Live Update) ]]
 
 if not getgenv then return warn("Delta executor required") end
 if getgenv().MozzLoaded then pcall(function() getgenv().MozzGUI:Destroy() end) end
@@ -38,20 +38,6 @@ local Themes = {
 
 getgenv().MozzRoles = {}
 local function tag(obj, role) getgenv().MozzRoles[obj] = role return obj end
-
--- ==== FORWARD DECLARATIONS ====
-function teleportTo(plr)
-    if not plr or not plr.Character then return end
-    local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    local tRoot = plr.Character:FindFirstChild("HumanoidRootPart")
-    if myRoot and tRoot then myRoot.CFrame = tRoot.CFrame * CFrame.new(0,0,3) end
-end
-function rebuildPlayerList() end
-function startFly() end
-function stopFly() end
-function applySpeed() end
-function applyJump() end
--- ================================================================
 
 pcall(function() if CoreGui:FindFirstChild("MozzGUI") then CoreGui.MozzGUI:Destroy() end end)
 local ScreenGui = Instance.new("ScreenGui")
@@ -360,30 +346,12 @@ local function themeRow(parent)
     end
 end
 
--- ==== TP TOOL LOGIC ====
-local function createTPTool()
-    local backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
-    if not backpack then return end
-    if backpack:FindFirstChild("TP_TOOL") then backpack.TP_TOOL:Destroy() end
-    
-    local tool = Instance.new("Tool")
-    tool.Name = "TP_TOOL"
-    tool.RequiresHandle = false
-    tool.CanBeDropped = false
-    
-    tool.Activated:Connect(function()
-        local mouse = LocalPlayer:GetMouse()
-        if mouse and mouse.Hit then
-            local myChar = LocalPlayer.Character
-            local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
-            if myRoot then
-                myRoot.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
-            end
-        end
-    end)
-    
-    tool.Parent = backpack
-end
+function startFly() end
+function stopFly() end
+function applySpeed() end
+function applyJump() end
+function teleportTo() end
+function rebuildPlayerList() end
 
 -- ==== PAGE: MOVE ====
 local movePage = makeTab("Move", "MovementPage")
@@ -393,8 +361,6 @@ toggle(movePage, "Fly", "Fly", function(on) if on then startFly() else stopFly()
 input(movePage, "Speed", "Speed", function() applySpeed() end)
 input(movePage, "Jump", "Jump", function() applyJump() end)
 input(movePage, "FlySpeed", "FlySpeed")
-section(movePage, "Utility")
-button(movePage, "Get TP Tool", function() createTPTool() end)
 
 -- ==== PAGE: PLAYERS ====
 local playersPage = makeTab("Players", "PlayersPage")
@@ -495,6 +461,7 @@ end
 
 local hue = 0
 RunService.RenderStepped:Connect(function(dt)
+    -- Dynamic ESP update (for toggles and rainbow)
     if not Cfg.ESP_Enabled then
         if next(ESPCache) then clearESP() end
         return
@@ -509,6 +476,7 @@ RunService.RenderStepped:Connect(function(dt)
 
     local myChar = LocalPlayer.Character
     local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    
     for plr, data in pairs(ESPCache) do
         if data.Billboard and data.Billboard.Parent and myRoot then
             local char = plr.Character
@@ -519,7 +487,10 @@ RunService.RenderStepped:Connect(function(dt)
                 local hp = math.floor(hum.Health); local maxHp = math.floor(hum.MaxHealth)
                 local nameLbl = data.Billboard:FindFirstChild("NameLbl")
                 local infoLbl = data.Billboard:FindFirstChild("InfoLbl")
-                if nameLbl then nameLbl.TextColor3 = espColor; nameLbl.Text = plr.Name; nameLbl.Visible = Cfg.ESP_Name end
+                
+                if nameLbl then 
+                    nameLbl.TextColor3 = espColor; nameLbl.Text = plr.Name; nameLbl.Visible = Cfg.ESP_Name 
+                end
                 if infoLbl then
                     local txt = ""
                     if Cfg.ESP_Dist and Cfg.ESP_HP then txt = ("%d studs | %d/%d HP"):format(dist, hp, maxHp)
@@ -527,21 +498,37 @@ RunService.RenderStepped:Connect(function(dt)
                     elseif Cfg.ESP_HP then txt = ("%d/%d HP"):format(hp, maxHp) end
                     infoLbl.Text = txt; infoLbl.TextColor3 = espColor; infoLbl.Visible = (Cfg.ESP_Dist or Cfg.ESP_HP)
                 end
+                
+                -- Dynamic Chams
+                if Cfg.ESP_Chams and not data.Chams then
+                    local chams = Instance.new("Highlight")
+                    chams.Name = "MozzChams"
+                    chams.Adornee = char
+                    chams.FillTransparency = 0.5
+                    chams.OutlineTransparency = 0
+                    chams.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                    chams.Parent = char
+                    data.Chams = chams
+                elseif not Cfg.ESP_Chams and data.Chams then
+                    data.Chams:Destroy()
+                    data.Chams = nil
+                end
+
+                if data.Chams and data.Chams.Parent then
+                    data.Chams.FillColor = espColor
+                    data.Chams.OutlineColor = espColor
+                end
             end
-        end
-        if data.Chams and data.Chams.Parent then
-            data.Chams.FillColor = espColor
-            data.Chams.OutlineColor = espColor
         end
     end
 end)
 
 -- Aimbot Logic
 local aimTarget = nil
-local mouse = LocalPlayer:GetMouse()
 RunService.RenderStepped:Connect(function(dt)
+    -- Dynamic FOV drawing
     if Cfg.Aim_DrawFOV and Cfg.Aim_Enabled then FovCircle.Visible = true else FovCircle.Visible = false end
-
+    
     if not Cfg.Aim_Enabled then aimTarget = nil; return end
 
     local cam = workspace.CurrentCamera
@@ -664,6 +651,13 @@ function startFly()
     end)
 end
 function stopFly() Cfg.Fly = false; flyActive = false end
+
+function teleportTo(plr)
+    if not plr or not plr.Character then return end
+    local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local tRoot = plr.Character:FindFirstChild("HumanoidRootPart")
+    if myRoot and tRoot then myRoot.CFrame = tRoot.CFrame * CFrame.new(0,0,3) end
+end
 
 RunService.Heartbeat:Connect(function()
     if Cfg.FollowTarget then
