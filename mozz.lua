@@ -1,4 +1,4 @@
---[[ MOZZ v44 — Delta Android (Final) ]]
+--[[ MOZZ v45 — Delta Android (Fixed TP Tool) ]]
 
 if not getgenv then return warn("Delta executor required") end
 if getgenv().MozzLoaded then pcall(function() getgenv().MozzGUI:Destroy() end) end
@@ -38,6 +38,20 @@ local Themes = {
 
 getgenv().MozzRoles = {}
 local function tag(obj, role) getgenv().MozzRoles[obj] = role return obj end
+
+-- ==== FORWARD DECLARATIONS (Чтобы избежать ошибок вызова nil) ====
+function teleportTo(plr)
+    if not plr or not plr.Character then return end
+    local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local tRoot = plr.Character:FindFirstChild("HumanoidRootPart")
+    if myRoot and tRoot then myRoot.CFrame = tRoot.CFrame * CFrame.new(0,0,3) end
+end
+function rebuildPlayerList() end
+function startFly() end
+function stopFly() end
+function applySpeed() end
+function applyJump() end
+-- ================================================================
 
 pcall(function() if CoreGui:FindFirstChild("MozzGUI") then CoreGui.MozzGUI:Destroy() end end)
 local ScreenGui = Instance.new("ScreenGui")
@@ -346,18 +360,10 @@ local function themeRow(parent)
     end
 end
 
-function startFly() end
-function stopFly() end
-function applySpeed() end
-function applyJump() end
-function teleportTo() end
-function rebuildPlayerList() end
-
 -- ==== TP TOOL LOGIC ====
 local function createTPTool()
     local backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
     if not backpack then return end
-    
     if backpack:FindFirstChild("TP_TOOL") then backpack.TP_TOOL:Destroy() end
     
     local tool = Instance.new("Tool")
