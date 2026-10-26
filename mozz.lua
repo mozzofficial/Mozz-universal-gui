@@ -1,8 +1,9 @@
---[[ MOZZ UNIVERSAL — Move, Players, ESP, Aimbot ]]
+--[[ MOZZ UNIVERSAL ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
@@ -13,38 +14,42 @@ local Cfg = {
     Aim=false, Aim_FOV=150, Aim_Visible=true, Aim_Smooth=0.25, Draw_FOV=false
 }
 
+-- Современная цветовая палитра
 local Colors = {
-    Bg = Color3.fromRGB(15, 15, 20),
-    Panel = Color3.fromRGB(25, 25, 30),
-    Text = Color3.fromRGB(230, 230, 240),
-    SubText = Color3.fromRGB(150, 150, 160),
-    Accent = Color3.fromRGB(0, 170, 255),
-    ToggleOff = Color3.fromRGB(60, 60, 70),
-    ToggleOn = Color3.fromRGB(80, 200, 80)
+    Bg = Color3.fromRGB(18, 18, 22),
+    Panel = Color3.fromRGB(28, 28, 34),
+    Element = Color3.fromRGB(38, 38, 45),
+    Text = Color3.fromRGB(255, 255, 255),
+    SubText = Color3.fromRGB(160, 160, 170),
+    Accent = Color3.fromRGB(130, 80, 255), -- Красивый фиолетовый
+    AccentHover = Color3.fromRGB(150, 110, 255),
+    ToggleOff = Color3.fromRGB(55, 55, 65),
+    ToggleOn = Color3.fromRGB(80, 200, 80),
+    Stroke = Color3.fromRGB(50, 50, 60)
 }
 
-pcall(function() if CoreGui:FindFirstChild("MozzClean") then CoreGui.MozzClean:Destroy() end end)
+pcall(function() if CoreGui:FindFirstChild("MozzModern") then CoreGui.MozzModern:Destroy() end end)
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "MozzClean"
+ScreenGui.Name = "MozzModern"
 ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = CoreGui
 
--- ================= Кнопка меню (M) =================
+-- ================= Плавающие кнопки =================
 local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
-ToggleBtn.Position = UDim2.new(0, 15, 0.5, -60)
+ToggleBtn.Size = UDim2.new(0, 56, 0, 56)
+ToggleBtn.Position = UDim2.new(0, 15, 0.5, -70)
 ToggleBtn.BackgroundColor3 = Colors.Accent
-ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.TextColor3 = Colors.Text
 ToggleBtn.Font = Enum.Font.GothamBold
 ToggleBtn.TextSize = 18
 ToggleBtn.Text = "M"
 ToggleBtn.BorderSizePixel = 0
 ToggleBtn.Parent = ScreenGui
-Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 16)
 
--- ================= Кнопка Аима (AIM) =================
 local AimBtn = Instance.new("TextButton")
-AimBtn.Size = UDim2.new(0, 50, 0, 50)
+AimBtn.Size = UDim2.new(0, 56, 0, 56)
 AimBtn.Position = UDim2.new(0, 15, 0.5, 0)
 AimBtn.BackgroundColor3 = Colors.Panel
 AimBtn.TextColor3 = Colors.Text
@@ -53,17 +58,21 @@ AimBtn.TextSize = 14
 AimBtn.Text = "AIM"
 AimBtn.BorderSizePixel = 0
 AimBtn.Parent = ScreenGui
-Instance.new("UICorner", AimBtn).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", AimBtn).CornerRadius = UDim.new(0, 16)
+Instance.new("UIStroke", AimBtn).Color = Colors.Stroke
 
 -- Основное меню
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 260, 0, 320)
-Main.Position = UDim2.new(0.5, -130, 0.5, -160)
+Main.Size = UDim2.new(0, 280, 0, 360)
+Main.Position = UDim2.new(0.5, -140, 0.5, -180)
 Main.BackgroundColor3 = Colors.Bg
 Main.BorderSizePixel = 0
 Main.Visible = false
 Main.Parent = ScreenGui
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 14)
+local mainStroke = Instance.new("UIStroke", Main)
+mainStroke.Color = Colors.Stroke
+mainStroke.Thickness = 1.5
 
 -- ================= Драг-хелпер =================
 local function MakeDraggable(frame, handle)
@@ -91,7 +100,7 @@ local function MakeDraggable(frame, handle)
     end)
 end
 
--- Логика кнопки меню
+-- Логика кнопок
 local mDragging, mMoved, mStart, mPos
 ToggleBtn.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -112,7 +121,6 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Логика кнопки AIM
 local aDragging, aMoved, aStart, aPos
 AimBtn.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -136,31 +144,32 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Хедер для перетаскивания меню
+-- Хедер
 local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 30)
-Header.BackgroundColor3 = Colors.Panel
-Header.BorderSizePixel = 0
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.BackgroundTransparency = 1
 Header.Parent = Main
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
 MakeDraggable(Main, Header)
 
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "MOZZ"
 Title.TextColor3 = Colors.Text
 Title.Font = Enum.Font.GothamBlack
-Title.TextSize = 14
+Title.TextSize = 18
+Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
 
+-- Вкладки (Tabs)
 local TabsFrame = Instance.new("Frame")
-TabsFrame.Size = UDim2.new(1, -10, 0, 30)
-TabsFrame.Position = UDim2.new(0, 5, 0, 35)
+TabsFrame.Size = UDim2.new(1, -20, 0, 35)
+TabsFrame.Position = UDim2.new(0, 10, 0, 45)
 TabsFrame.BackgroundColor3 = Colors.Panel
 TabsFrame.BorderSizePixel = 0
 TabsFrame.Parent = Main
-Instance.new("UICorner", TabsFrame).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", TabsFrame).CornerRadius = UDim.new(0, 8)
 
 local Pages = {}
 local function MakeTab(name, xScale, width)
@@ -176,23 +185,21 @@ local function MakeTab(name, xScale, width)
     btn.Parent = TabsFrame
     
     local page = Instance.new("ScrollingFrame")
-    page.Size = UDim2.new(1, 0, 1, -70)
-    page.Position = UDim2.new(0, 0, 0, 70)
+    page.Size = UDim2.new(1, -20, 1, -100)
+    page.Position = UDim2.new(0, 10, 0, 85)
     page.BackgroundTransparency = 1
     page.BorderSizePixel = 0
-    page.ScrollBarThickness = 2
+    page.ScrollBarThickness = 3
     page.Visible = false
     page.Parent = Main
-    
-    -- Фикс невидимых элементов в скролле
-    page.AutomaticCanvasSize = Enum.AutomaticSize.Y 
+    page.AutomaticCanvasSize = Enum.AutomaticSize.Y
     page.CanvasSize = UDim2.new(0, 0, 0, 0)
 
     Pages[name] = {btn=btn, page=page}
     btn.MouseButton1Click:Connect(function()
         for k, v in pairs(Pages) do
             v.page.Visible = (k == name)
-            v.btn.TextColor3 = (k == name) and Colors.Accent or Colors.SubText
+            v.btn.TextColor3 = (k == name) and Colors.Text or Colors.SubText
         end
     end)
     return page
@@ -203,46 +210,82 @@ local pagePlayers = MakeTab("Players", 0.25, 0.25)
 local pageESP = MakeTab("ESP", 0.5, 0.25)
 local pageAim = MakeTab("Aim", 0.75, 0.25)
 
-local function CreateToggle(parent, text, key, callback)
+-- Компоненты UI
+local function CreateButton(parent, text, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -10, 0, 32)
-    btn.Position = UDim2.new(0, 5, 0, #parent:GetChildren() * 35)
-    btn.BackgroundColor3 = Colors.Panel
+    btn.Size = UDim2.new(1, 0, 0, 36)
+    btn.Position = UDim2.new(0, 0, 0, #parent:GetChildren() * 45)
+    btn.BackgroundColor3 = Colors.Accent
     btn.TextColor3 = Colors.Text
-    btn.Font = Enum.Font.Gotham
+    btn.Font = Enum.Font.GothamBold
     btn.TextSize = 13
     btn.Text = text
     btn.BorderSizePixel = 0
     btn.Parent = parent
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
     
-    local ind = Instance.new("Frame")
-    ind.Size = UDim2.new(0, 16, 0, 16)
-    ind.Position = UDim2.new(1, -25, 0.5, -8)
-    ind.BackgroundColor3 = Cfg[key] and Colors.Accent or Colors.ToggleOff
-    ind.BorderSizePixel = 0
-    ind.Parent = btn
-    Instance.new("UICorner", ind).CornerRadius = UDim.new(0, 4)
+    btn.MouseEnter:Connect(function() TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Colors.AccentHover}):Play() end)
+    btn.MouseLeave:Connect(function() TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Colors.Accent}):Play() end)
+    
+    btn.MouseButton1Click:Connect(callback)
+end
+
+local function CreateToggle(parent, text, key, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 36)
+    btn.Position = UDim2.new(0, 0, 0, #parent:GetChildren() * 45)
+    btn.BackgroundColor3 = Colors.Element
+    btn.TextColor3 = Colors.Text
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 13
+    btn.Text = text
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.BorderSizePixel = 0
+    btn.Parent = parent
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    
+    local padding = Instance.new("UIPadding", btn)
+    padding.PaddingLeft = UDim.new(0, 15)
+    
+    local toggleBg = Instance.new("Frame")
+    toggleBg.Size = UDim2.new(0, 36, 0, 20)
+    toggleBg.Position = UDim2.new(1, -50, 0.5, -10)
+    toggleBg.BackgroundColor3 = Cfg[key] and Colors.Accent or Colors.ToggleOff
+    toggleBg.BorderSizePixel = 0
+    toggleBg.Parent = btn
+    Instance.new("UICorner", toggleBg).CornerRadius = UDim.new(1, 0)
+
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.new(0, 16, 0, 16)
+    knob.Position = Cfg[key] and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+    knob.BackgroundColor3 = Colors.Text
+    knob.BorderSizePixel = 0
+    knob.Parent = toggleBg
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
 
     btn.MouseButton1Click:Connect(function()
         Cfg[key] = not Cfg[key]
-        ind.BackgroundColor3 = Cfg[key] and Colors.Accent or Colors.ToggleOff
+        TweenService:Create(toggleBg, TweenInfo.new(0.15), {BackgroundColor3 = Cfg[key] and Colors.Accent or Colors.ToggleOff}):Play()
+        TweenService:Create(knob, TweenInfo.new(0.15), {Position = Cfg[key] and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)}):Play()
         if callback then callback(Cfg[key]) end
     end)
 end
 
 local function CreateInput(parent, text, key)
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -10, 0, 32)
-    frame.Position = UDim2.new(0, 5, 0, #parent:GetChildren() * 35)
-    frame.BackgroundColor3 = Colors.Panel
+    frame.Size = UDim2.new(1, 0, 0, 36)
+    frame.Position = UDim2.new(0, 0, 0, #parent:GetChildren() * 45)
+    frame.BackgroundColor3 = Colors.Element
     frame.BorderSizePixel = 0
     frame.Parent = parent
-    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+    
+    local padding = Instance.new("UIPadding", frame)
+    padding.PaddingLeft = UDim.new(0, 15)
+    padding.PaddingRight = UDim.new(0, 10)
 
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(0.5, 0, 1, 0)
-    lbl.Position = UDim2.new(0, 10, 0, 0)
     lbl.BackgroundTransparency = 1
     lbl.Text = text
     lbl.TextColor3 = Colors.Text
@@ -252,16 +295,16 @@ local function CreateInput(parent, text, key)
     lbl.Parent = frame
 
     local box = Instance.new("TextBox")
-    box.Size = UDim2.new(0, 60, 0, 24)
+    box.Size = UDim2.new(0, 70, 0, 24)
     box.Position = UDim2.new(1, -70, 0.5, -12)
     box.BackgroundColor3 = Colors.Bg
-    box.TextColor3 = Colors.Accent
+    box.TextColor3 = Colors.Text
     box.Font = Enum.Font.GothamBold
     box.TextSize = 13
     box.Text = tostring(Cfg[key])
     box.BorderSizePixel = 0
     box.Parent = frame
-    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6)
 
     box.FocusLost:Connect(function()
         local num = tonumber(box.Text:match("[-%d%.]+"))
@@ -282,14 +325,14 @@ fovStroke.Thickness = 2
 fovStroke.Color = Colors.Accent
 fovStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
--- Move Tab
+-- Наполнение вкладок
 CreateToggle(pageMove, "NoClip", "NoClip")
 CreateToggle(pageMove, "Fly", "Fly", function(on) if on then startFly() else stopFly() end end)
 CreateInput(pageMove, "Speed", "Speed")
 CreateInput(pageMove, "Jump", "Jump")
 CreateInput(pageMove, "FlySpeed", "FlySpeed")
+CreateButton(pageMove, "Get TP Tool", function() createTPTool() end)
 
--- ESP Tab
 CreateToggle(pageESP, "Enable ESP", "ESP")
 CreateToggle(pageESP, "Chams (Outline)", "Chams")
 CreateToggle(pageESP, "Show Name", "ESP_Name")
@@ -297,7 +340,6 @@ CreateToggle(pageESP, "Show Distance", "ESP_Dist")
 CreateToggle(pageESP, "Show HP", "ESP_HP")
 CreateToggle(pageESP, "Rainbow Color", "ESP_Rainbow")
 
--- Aim Tab
 CreateToggle(pageAim, "Enable Aimbot", "Aim", function(on)
     AimBtn.BackgroundColor3 = on and Colors.ToggleOn or Colors.Panel
 end)
@@ -306,11 +348,14 @@ CreateToggle(pageAim, "Visible Check", "Aim_Visible")
 CreateInput(pageAim, "FOV Radius", "Aim_FOV")
 CreateInput(pageAim, "Smoothness", "Aim_Smooth")
 
+Pages["Move"].page.Visible = true
+Pages["Move"].btn.TextColor3 = Colors.Text
+
 -- ================= Players Tab =================
 local SpectateTarget = nil
 local function UpdatePlayerList()
     for _, v in ipairs(pagePlayers:GetChildren()) do
-        if v:IsA("Frame") then v:Destroy() end
+        if v:IsA("Frame") or v:IsA("TextButton") then v:Destroy() end
     end
 
     local playerList = {}
@@ -320,22 +365,23 @@ local function UpdatePlayerList()
         end
     end
 
-    table.sort(playerList, function(a, b)
-        return string.lower(a.Name) < string.lower(b.Name)
-    end)
+    table.sort(playerList, function(a, b) return string.lower(a.Name) < string.lower(b.Name) end)
 
     for i, plr in ipairs(playerList) do
         local row = Instance.new("Frame")
-        row.Size = UDim2.new(1, -10, 0, 32)
-        row.Position = UDim2.new(0, 5, 0, (i - 1) * 35)
-        row.BackgroundColor3 = Colors.Panel
+        row.Size = UDim2.new(1, 0, 0, 36)
+        row.Position = UDim2.new(0, 0, 0, (i - 1) * 45)
+        row.BackgroundColor3 = Colors.Element
         row.BorderSizePixel = 0
         row.Parent = pagePlayers
-        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
+        
+        local padding = Instance.new("UIPadding", row)
+        padding.PaddingLeft = UDim.new(0, 10)
+        padding.PaddingRight = UDim.new(0, 10)
 
         local nameLbl = Instance.new("TextLabel")
         nameLbl.Size = UDim2.new(0.4, 0, 1, 0)
-        nameLbl.Position = UDim2.new(0, 10, 0, 0)
         nameLbl.BackgroundTransparency = 1
         nameLbl.Text = plr.Name
         nameLbl.TextColor3 = Colors.Text
@@ -346,16 +392,16 @@ local function UpdatePlayerList()
         nameLbl.Parent = row
 
         local tpBtn = Instance.new("TextButton")
-        tpBtn.Size = UDim2.new(0, 45, 0, 24)
-        tpBtn.Position = UDim2.new(1, -110, 0.5, -12)
+        tpBtn.Size = UDim2.new(0, 45, 0, 26)
+        tpBtn.Position = UDim2.new(1, -105, 0.5, -13)
         tpBtn.BackgroundColor3 = Colors.Accent
-        tpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        tpBtn.TextColor3 = Colors.Text
         tpBtn.Font = Enum.Font.GothamBold
         tpBtn.TextSize = 11
         tpBtn.Text = "TP"
         tpBtn.BorderSizePixel = 0
         tpBtn.Parent = row
-        Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 4)
+        Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 6)
         
         tpBtn.MouseButton1Click:Connect(function()
             if plr.Character and LocalPlayer.Character then
@@ -368,38 +414,36 @@ local function UpdatePlayerList()
         end)
 
         local spBtn = Instance.new("TextButton")
-        spBtn.Size = UDim2.new(0, 55, 0, 24)
-        spBtn.Position = UDim2.new(1, -60, 0.5, -12)
-        spBtn.BackgroundColor3 = SpectateTarget == plr and Colors.ToggleOn or Colors.Bg
+        spBtn.Size = UDim2.new(0, 55, 0, 26)
+        spBtn.Position = UDim2.new(1, -55, 0.5, -13)
+        spBtn.BackgroundColor3 = SpectateTarget == plr and Colors.ToggleOn or Colors.ToggleOff
         spBtn.TextColor3 = Colors.Text
         spBtn.Font = Enum.Font.GothamBold
         spBtn.TextSize = 11
         spBtn.Text = "Watch"
         spBtn.BorderSizePixel = 0
         spBtn.Parent = row
-        Instance.new("UICorner", spBtn).CornerRadius = UDim.new(0, 4)
+        Instance.new("UICorner", spBtn).CornerRadius = UDim.new(0, 6)
         
         spBtn.MouseButton1Click:Connect(function()
             if SpectateTarget == plr then
                 SpectateTarget = nil
                 Camera.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                spBtn.BackgroundColor3 = Colors.Bg
             else
                 SpectateTarget = plr
                 if plr.Character then
                     local tHum = plr.Character:FindFirstChildOfClass("Humanoid")
                     if tHum then Camera.CameraSubject = tHum end
                 end
-                UpdatePlayerList()
             end
+            UpdatePlayerList()
         end)
     end
 
-    -- Отступ снизу (25 пикселей), чтобы последний элемент не прилипал
     local spacer = Instance.new("Frame")
-    spacer.Size = UDim2.new(1, 0, 0, 25)
+    spacer.Size = UDim2.new(1, 0, 0, 30)
     spacer.BackgroundTransparency = 1
-    spacer.Position = UDim2.new(0, 0, 0, #playerList * 35)
+    spacer.Position = UDim2.new(0, 0, 0, #playerList * 45)
     spacer.Parent = pagePlayers
 end
 
@@ -407,7 +451,6 @@ UpdatePlayerList()
 Players.PlayerAdded:Connect(function() task.wait(0.5) UpdatePlayerList() end)
 Players.PlayerRemoving:Connect(function() task.wait(0.1) UpdatePlayerList() end)
 
--- Возврат камеры при смерти/выходе цели
 RunService.RenderStepped:Connect(function()
     if SpectateTarget then
         if not SpectateTarget.Character or not SpectateTarget.Character:FindFirstChildOfClass("Humanoid") then
@@ -417,6 +460,31 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
+
+-- ================= TP TOOL LOGIC =================
+function createTPTool()
+    local backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
+    if not backpack then return end
+    if backpack:FindFirstChild("TP_TOOL") then backpack.TP_TOOL:Destroy() end
+    
+    local tool = Instance.new("Tool")
+    tool.Name = "TP_TOOL"
+    tool.RequiresHandle = false
+    tool.CanBeDropped = false
+    
+    tool.Activated:Connect(function()
+        local mouse = LocalPlayer:GetMouse()
+        if mouse and mouse.Hit then
+            local myChar = LocalPlayer.Character
+            local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+            if myRoot then
+                myRoot.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
+            end
+        end
+    end)
+    
+    tool.Parent = backpack
+end
 
 -- ================= Логика =================
 RunService.Stepped:Connect(function()
@@ -497,13 +565,12 @@ local ESPCache = {}
 local hue = 0
 
 RunService.RenderStepped:Connect(function(dt)
-    -- Визуальный круг FOV
     if Cfg.Draw_FOV then
         FovCircle.Size = UDim2.new(0, Cfg.Aim_FOV * 2, 0, Cfg.Aim_FOV * 2)
         FovCircle.Position = UDim2.new(0.5, -Cfg.Aim_FOV, 0.42, -Cfg.Aim_FOV) 
     end
 
-    -- ESP (Мгновенное обновление)
+    -- ESP
     if not Cfg.ESP then
         for p, data in pairs(ESPCache) do 
             if data.Billboard then data.Billboard:Destroy() end
@@ -587,7 +654,7 @@ RunService.RenderStepped:Connect(function(dt)
         end
     end
 
-    -- Aimbot (3D FOV)
+    -- Aimbot
     if Cfg.Aim then
         local cam = workspace.CurrentCamera
         local myChar = LocalPlayer.Character
