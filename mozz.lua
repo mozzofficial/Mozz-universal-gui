@@ -1,4 +1,4 @@
---[[ MOZZ UNIVERSAL ]]
+--[[ MOZZ MODERN — Move, Players, ESP, Aimbot (Team Check) ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -10,8 +10,8 @@ local Camera = workspace.CurrentCamera
 
 local Cfg = {
     NoClip=false, Fly=false, Speed=16, Jump=50, FlySpeed=80,
-    ESP=false, ESP_Color=Color3.fromRGB(255, 50, 50), ESP_Rainbow=false, Chams=false, ESP_Name=true, ESP_Dist=true, ESP_HP=true,
-    Aim=false, Aim_FOV=150, Aim_Visible=true, Aim_Smooth=0.25, Draw_FOV=false
+    ESP=false, ESP_Color=Color3.fromRGB(255, 50, 50), ESP_Rainbow=false, Chams=false, ESP_Name=true, ESP_Dist=true, ESP_HP=true, ESP_TeamCheck=false,
+    Aim=false, Aim_FOV=150, Aim_Visible=true, Aim_Smooth=0.25, Draw_FOV=false, Aim_TeamCheck=false
 }
 
 local Colors = {
@@ -26,6 +26,13 @@ local Colors = {
     ToggleOn = Color3.fromRGB(80, 200, 80),
     Stroke = Color3.fromRGB(50, 50, 60)
 }
+
+-- Функция проверки на союзника
+local function IsTeammate(plr)
+    if not LocalPlayer.Team then return false end
+    if not plr.Team then return false end
+    return LocalPlayer.Team == plr.Team
+end
 
 pcall(function() if CoreGui:FindFirstChild("MozzModern") then CoreGui.MozzModern:Destroy() end end)
 local ScreenGui = Instance.new("ScreenGui")
@@ -338,12 +345,14 @@ CreateToggle(pageESP, "Show Name", "ESP_Name")
 CreateToggle(pageESP, "Show Distance", "ESP_Dist")
 CreateToggle(pageESP, "Show HP", "ESP_HP")
 CreateToggle(pageESP, "Rainbow Color", "ESP_Rainbow")
+CreateToggle(pageESP, "Team Check", "ESP_TeamCheck")
 
 CreateToggle(pageAim, "Enable Aimbot", "Aim", function(on)
     AimBtn.BackgroundColor3 = on and Colors.ToggleOn or Colors.Panel
 end)
 CreateToggle(pageAim, "Draw FOV", "Draw_FOV", function(on) FovCircle.Visible = on end)
 CreateToggle(pageAim, "Visible Check", "Aim_Visible")
+CreateToggle(pageAim, "Team Check", "Aim_TeamCheck")
 CreateInput(pageAim, "FOV Radius", "Aim_FOV")
 CreateInput(pageAim, "Smoothness", "Aim_Smooth")
 
@@ -438,7 +447,6 @@ local function UpdatePlayerList()
             UpdatePlayerList()
         end)
     end
-    -- Убрал Spacer, теперь список заканчивается ровно на последнем игроке
 end
 
 UpdatePlayerList()
@@ -577,6 +585,16 @@ RunService.RenderStepped:Connect(function(dt)
         
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr ~= LocalPlayer and plr.Character then
+                -- Тим чек для ESP
+                if Cfg.ESP_TeamCheck and IsTeammate(plr) then
+                    if ESPCache[plr] then
+                        if ESPCache[plr].Billboard then ESPCache[plr].Billboard:Destroy() end
+                        if ESPCache[plr].Chams then ESPCache[plr].Chams:Destroy() end
+                        ESPCache[plr] = nil
+                    end
+                    continue
+                end
+
                 local head = plr.Character:FindFirstChild("Head")
                 local hum = plr.Character:FindFirstChildOfClass("Humanoid")
                 
@@ -659,6 +677,9 @@ RunService.RenderStepped:Connect(function(dt)
             
             for _, plr in ipairs(Players:GetPlayers()) do
                 if plr ~= LocalPlayer and plr.Character then
+                    -- Тим чек для Аима
+                    if Cfg.Aim_TeamCheck and IsTeammate(plr) then continue end
+
                     local tHead = plr.Character:FindFirstChild("Head")
                     local tHum = plr.Character:FindFirstChildOfClass("Humanoid")
                     if tHead and tHum and tHum.Health > 0 then
