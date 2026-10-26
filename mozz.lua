@@ -1,4 +1,4 @@
---[[ MOZZ UNIVERSAL ]]
+--[[ MOZZ MODERN — Move (TP Tool), Players, ESP, Aimbot ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -14,14 +14,13 @@ local Cfg = {
     Aim=false, Aim_FOV=150, Aim_Visible=true, Aim_Smooth=0.25, Draw_FOV=false
 }
 
--- Современная цветовая палитра
 local Colors = {
     Bg = Color3.fromRGB(18, 18, 22),
     Panel = Color3.fromRGB(28, 28, 34),
     Element = Color3.fromRGB(38, 38, 45),
     Text = Color3.fromRGB(255, 255, 255),
     SubText = Color3.fromRGB(160, 160, 170),
-    Accent = Color3.fromRGB(130, 80, 255), -- Красивый фиолетовый
+    Accent = Color3.fromRGB(130, 80, 255),
     AccentHover = Color3.fromRGB(150, 110, 255),
     ToggleOff = Color3.fromRGB(55, 55, 65),
     ToggleOn = Color3.fromRGB(80, 200, 80),
@@ -439,12 +438,7 @@ local function UpdatePlayerList()
             UpdatePlayerList()
         end)
     end
-
-    local spacer = Instance.new("Frame")
-    spacer.Size = UDim2.new(1, 0, 0, 30)
-    spacer.BackgroundTransparency = 1
-    spacer.Position = UDim2.new(0, 0, 0, #playerList * 45)
-    spacer.Parent = pagePlayers
+    -- Убрал Spacer, теперь список заканчивается ровно на последнем игроке
 end
 
 UpdatePlayerList()
