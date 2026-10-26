@@ -1,4 +1,4 @@
---[[ MOZZ CLEAN — Move, ESP, Aimbot (Instant ESP Update) ]]
+--[[ MOZZ UNIVERSAL MOBILE SCRIPT]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
